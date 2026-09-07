@@ -128,6 +128,14 @@ The application does not send career data to a third-party service, but anyone w
 
 Issues and pull requests are welcome. For substantial changes, opening an issue first is helpful so the proposed approach can be discussed. Please keep personal or identifiable career data out of commits, fixtures and screenshots.
 
+## Author and attribution
+
+Career Canvas was originally created by **Thomas Johnson**. If you redistribute or modify the software, retain the attribution described in [ATTRIBUTION.md](ATTRIBUTION.md), including the link to the original [Career Canvas repository](https://github.com/jetbackwards/career-canvas).
+
+Contributors are recognised in [AUTHORS.md](AUTHORS.md). Citation metadata is provided in [CITATION.cff](CITATION.cff).
+
 ## Licence
 
-A licence has not yet been selected. Until a licence file is added, the source is publicly visible but standard copyright restrictions still apply.
+Career Canvas is licensed under the [GNU Affero General Public License v3.0](LICENSE), with the reasonable author-attribution requirement permitted by section 7(b) and recorded in [ATTRIBUTION.md](ATTRIBUTION.md).
+
+You may use, study, modify and redistribute the software, including commercially. Modified versions must remain under the AGPL, and users interacting with a modified version over a network must be offered its corresponding source code. The attribution requirement does not imply endorsement by the original author.

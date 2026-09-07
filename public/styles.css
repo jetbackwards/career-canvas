@@ -9,3 +9,5 @@
 .preview-controls{max-height:calc(100vh - 120px);overflow-y:auto}
 @media(max-width:900px){.preview-controls{max-height:none;overflow:visible}}
 @media print{body{background:white}.cv-paper{box-shadow:none;width:auto;min-height:0;padding:0;margin:0}.cv-head,.cv-intro{break-inside:avoid;page-break-inside:avoid}.cv-section h2{break-after:avoid-page;page-break-after:avoid}.cv-item{break-inside:avoid-page;page-break-inside:avoid}.cv-item-head{break-after:avoid-page;page-break-after:avoid}.cv-item p,.cv-item li{orphans:2;widows:2}.cv-item li{break-inside:avoid}}
+
+.app-credit{max-width:1260px;margin:-38px auto 28px;padding:0 32px;color:var(--muted);font-size:11px;line-height:1.5;text-align:center}.app-credit strong{color:var(--ink)}.app-credit a{color:var(--blue);text-underline-offset:2px}.app-credit span{padding:0 5px}@media(max-width:900px){.app-credit{margin:-38px auto 22px;padding:0 16px}}@media print{.app-credit{display:none!important}}
