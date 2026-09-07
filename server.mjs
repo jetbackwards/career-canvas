@@ -1,3 +1,11 @@
+/*
+ * Career Canvas — a private, self-hosted career evidence bank and CV builder.
+ * Copyright (C) 2026 Thomas Johnson
+ *
+ * Licensed under AGPL-3.0-only with the additional attribution term in
+ * ATTRIBUTION.md. See LICENSE and https://github.com/jetbackwards/career-canvas.
+ */
+
 import http from 'node:http';
 import { readFile, writeFile, mkdir, rename, stat } from 'node:fs/promises';
 import { dirname, extname, join, normalize } from 'node:path';

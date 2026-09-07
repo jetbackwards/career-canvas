@@ -1,3 +1,11 @@
+/*
+ * Career Canvas — a private, self-hosted career evidence bank and CV builder.
+ * Copyright (C) 2026 Thomas Johnson
+ *
+ * Licensed under AGPL-3.0-only with the additional attribution term in
+ * ATTRIBUTION.md. See LICENSE and https://github.com/jetbackwards/career-canvas.
+ */
+
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 const escapeHtml = (v = '') => String(v).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));

@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use Career Canvas in published work, please cite the software using these metadata."
+title: "Career Canvas"
+type: software
+authors:
+  - family-names: "Johnson"
+    given-names: "Thomas"
+repository-code: "https://github.com/jetbackwards/career-canvas"
+url: "https://github.com/jetbackwards/career-canvas"
+license: "AGPL-3.0-only"
+version: "0.1.0"
+date-released: "2026-09-07"
