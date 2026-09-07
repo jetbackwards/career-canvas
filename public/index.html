@@ -1,92 +1,92 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Private evidence bank and tailored CV builder">
-  <title>Career Canvas</title>
-  <link rel="stylesheet" href="/styles.css">
-  <style id="printPageStyle">@media print { @page { size: A4; margin: 16mm; } }</style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<meta name="description" content="Private evidence bank and tailored CV builder">
+	<title>Career Canvas</title>
+	<link rel="stylesheet" href="/styles.css">
+	<style id="printPageStyle">@media print { @page { size: A4; margin: 16mm; } }</style>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#evidence" aria-label="Career Canvas home"><span class="brandmark">CC</span><span>Career Canvas</span></a>
-    <nav aria-label="Main navigation">
-      <button class="nav active" data-view="evidence">Evidence bank</button>
-      <button class="nav" data-view="profiles">CV profiles</button>
-      <button class="nav" data-view="preview">Preview</button>
-    </nav>
-    <div class="actions"><span id="saveState" class="save-state">Saved</span><button id="importBtn" class="ghost">Import</button><button id="backupBtn" class="ghost">Backup</button><button id="printBtn" class="primary">Generate PDF</button></div>
-  </header>
-
-  <main>
-    <section id="evidenceView" class="view active">
-      <div class="workspace-head">
-        <div><p class="eyebrow">MASTER RECORD</p><h1>Your career evidence</h1><p>Capture each achievement once. Profiles decide what earns space in a CV.</p></div>
-        <button id="addEntryBtn" class="primary">+ Add evidence</button>
-      </div>
-      <section class="profile-strip" id="identityCard"></section>
-      <div class="filter-row">
-        <input id="searchInput" type="search" placeholder="Search achievements, roles or tags…" aria-label="Search evidence">
-        <div id="tagFilters" class="chips" aria-label="Filter by tag"></div>
-      </div>
-      <div id="entryList" class="entry-list"></div>
-    </section>
-
-    <section id="profilesView" class="view">
-      <div class="workspace-head"><div><p class="eyebrow">TAILORING RULES</p><h1>CV profiles</h1><p>Choose a focus and the evidence bank is ranked around it.</p></div><button id="addProfileBtn" class="primary">+ New profile</button></div>
-      <div id="profileGrid" class="profile-grid"></div>
-    </section>
-
-    <section id="previewView" class="view preview-workspace">
-      <aside class="preview-controls">
-        <label>CV profile<select id="previewProfile"></select></label>
-        <label>Target role<input id="targetRole" placeholder="e.g. Clinical Product Advisor"></label>
-        <label>Target organisation<input id="targetOrg" placeholder="e.g. Medical device company"></label>
-        <label class="range-label">Detail level <span id="detailValue">Balanced</span><input id="detailRange" type="range" min="1" max="3" value="2"></label>
-        <div class="control-divider"><span>Appearance</span></div>
-        <label class="colour-label">Accent colour<input id="cvAccent" type="color" value="#2563eb"></label>
-        <label>Layout<select id="cvLayout"><option value="classic">Classic</option><option value="contemporary">Contemporary</option><option value="centred">Centred</option><option value="minimal">Minimal</option></select></label>
-        <label>Font<select id="cvFont"><option value="modern">Aptos / Calibri</option><option value="arial">Arial / Helvetica</option><option value="tahoma">Tahoma / Verdana</option><option value="trebuchet">Trebuchet MS</option><option value="century">Century Gothic</option><option value="georgia">Georgia</option><option value="cambria">Cambria</option><option value="garamond">Garamond</option><option value="palatino">Palatino</option><option value="baskerville">Baskerville</option><option value="times">Times New Roman</option></select></label>
-        <label class="range-label">Text size <span id="textSizeValue">100%</span><input id="textSizeRange" type="range" min="85" max="120" step="5" value="100"></label>
-        <label class="range-label">Page margins <span id="paddingValue">16 mm</span><input id="paddingRange" type="range" min="10" max="25" step="1" value="16"></label>
-        <label class="range-label">Section spacing <span id="sectionSpacingValue">14 px</span><input id="sectionSpacingRange" type="range" min="6" max="30" step="1" value="14"></label>
-        <label class="range-label">Entry spacing <span id="itemSpacingValue">10 px</span><input id="itemSpacingRange" type="range" min="3" max="22" step="1" value="10"></label>
-        <label class="range-label">Paragraph spacing <span id="paragraphSpacingValue">3 px</span><input id="paragraphSpacingRange" type="range" min="0" max="14" step="1" value="3"></label>
-        <label class="range-label">Line spacing <span id="lineHeightValue">1.40</span><input id="lineHeightRange" type="range" min="1.2" max="1.7" step="0.05" value="1.4"></label>
-        <p class="hint">Use your browser’s “Save as PDF” destination. Turn off browser headers and footers for the cleanest result.</p>
-        <button id="printBtnSide" class="primary full">Generate PDF</button>
-      </aside>
-      <article id="cvPaper" class="cv-paper"></article>
-    </section>
-  </main>
-
-  <dialog id="editorDialog">
-    <form id="editorForm" method="dialog">
-      <div class="dialog-head"><div><p class="eyebrow" id="dialogEyebrow">EVIDENCE</p><h2 id="dialogTitle">Add evidence</h2></div><button type="button" class="icon-btn close-dialog" aria-label="Close">×</button></div>
-      <div id="editorFields" class="form-grid"></div>
-      <div class="dialog-actions"><button type="button" id="deleteBtn" class="danger">Delete</button><span></span><button type="button" class="ghost close-dialog">Cancel</button><button type="submit" class="primary">Save</button></div>
-    </form>
-  </dialog>
-
-  <dialog id="backupDialog">
-    <div class="dialog-head"><div><p class="eyebrow">PORTABLE DATA</p><h2>Backup and restore</h2></div><button class="icon-btn close-dialog">×</button></div>
-    <p>Download everything as JSON, or restore a previous Career Canvas backup.</p>
-    <div class="backup-actions"><button id="exportBtn" class="primary">Download backup</button><label class="ghost file-label">Restore backup<input id="restoreInput" type="file" accept="application/json"></label></div>
-  </dialog>
-
-  <dialog id="importDialog">
-    <div class="dialog-head"><div><p class="eyebrow">ADD CAREER DATA</p><h2>Import records</h2></div><button class="icon-btn close-dialog" aria-label="Close">×</button></div>
-    <p class="dialog-copy">Import adds information to your current evidence bank. Unlike restore, it does not remove records that are not in the file.</p>
-    <label class="import-picker">Career Canvas import file<input id="careerImportInput" type="file" accept="application/json"></label>
-    <div id="importPreview" class="import-preview" hidden></div>
-    <div id="importOptions" class="import-options" hidden>
-      <fieldset><legend>Include</legend><label class="check"><input id="importIdentity" type="checkbox" checked>Professional identity</label><label class="check"><input id="importProfiles" type="checkbox" checked>CV profiles</label><label class="check"><input id="importEntries" type="checkbox" checked>Evidence records</label></fieldset>
-      <label>When an ID already exists<select id="importConflict"><option value="keep">Keep my existing record</option><option value="replace">Use the imported record</option></select></label>
-    </div>
-    <div class="dialog-actions import-actions"><span></span><span></span><button class="ghost close-dialog">Cancel</button><button id="confirmImportBtn" class="primary" disabled>Import data</button></div>
-  </dialog>
-  <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/app.js"></script>
+	<header class="topbar">
+		<a class="brand" href="#evidence" aria-label="Career Canvas home"><span class="brandmark">CC</span><span>Career Canvas</span></a>
+		<nav aria-label="Main navigation">
+			<button class="nav active" data-view="evidence">Evidence bank</button>
+			<button class="nav" data-view="profiles">CV profiles</button>
+			<button class="nav" data-view="preview">Preview</button>
+		</nav>
+		<div class="actions"><span id="saveState" class="save-state">Saved</span><button id="importBtn" class="ghost">Import</button><button id="backupBtn" class="ghost">Backup</button><button id="printBtn" class="primary">Generate PDF</button></div>
+	</header>
+	
+	<main>
+		<section id="evidenceView" class="view active">
+			<div class="workspace-head">
+				<div><p class="eyebrow">MASTER RECORD</p><h1>Your career evidence</h1><p>Capture each achievement once. Profiles decide what earns space in a CV.</p></div>
+				<button id="addEntryBtn" class="primary">+ Add evidence</button>
+			</div>
+			<section class="profile-strip" id="identityCard"></section>
+			<div class="filter-row">
+				<input id="searchInput" type="search" placeholder="Search achievements, roles or tags…" aria-label="Search evidence">
+				<div id="tagFilters" class="chips" aria-label="Filter by tag"></div>
+			</div>
+			<div id="entryList" class="entry-list"></div>
+		</section>
+		
+		<section id="profilesView" class="view">
+			<div class="workspace-head"><div><p class="eyebrow">TAILORING RULES</p><h1>CV profiles</h1><p>Choose a focus and the evidence bank is ranked around it.</p></div><button id="addProfileBtn" class="primary">+ New profile</button></div>
+			<div id="profileGrid" class="profile-grid"></div>
+		</section>
+		
+		<section id="previewView" class="view preview-workspace">
+			<aside class="preview-controls">
+				<label>CV profile<select id="previewProfile"></select></label>
+				<label>Target role<input id="targetRole" placeholder="e.g. Clinical Product Advisor"></label>
+				<label>Target organisation<input id="targetOrg" placeholder="e.g. Medical device company"></label>
+				<label class="range-label">Detail level <span id="detailValue">Balanced</span><input id="detailRange" type="range" min="1" max="3" value="2"></label>
+				<div class="control-divider"><span>Appearance</span></div>
+				<label class="colour-label">Accent colour<input id="cvAccent" type="color" value="#2563eb"></label>
+				<label>Layout<select id="cvLayout"><option value="classic">Classic</option><option value="contemporary">Contemporary</option><option value="centred">Centred</option><option value="minimal">Minimal</option></select></label>
+				<label>Font<select id="cvFont"><option value="modern">Aptos / Calibri</option><option value="arial">Arial / Helvetica</option><option value="tahoma">Tahoma / Verdana</option><option value="trebuchet">Trebuchet MS</option><option value="century">Century Gothic</option><option value="georgia">Georgia</option><option value="cambria">Cambria</option><option value="garamond">Garamond</option><option value="palatino">Palatino</option><option value="baskerville">Baskerville</option><option value="times">Times New Roman</option></select></label>
+				<label class="range-label">Text size <span id="textSizeValue">100%</span><input id="textSizeRange" type="range" min="85" max="120" step="5" value="100"></label>
+				<label class="range-label">Page margins <span id="paddingValue">16 mm</span><input id="paddingRange" type="range" min="10" max="25" step="1" value="16"></label>
+				<label class="range-label">Section spacing <span id="sectionSpacingValue">14 px</span><input id="sectionSpacingRange" type="range" min="6" max="30" step="1" value="14"></label>
+				<label class="range-label">Entry spacing <span id="itemSpacingValue">10 px</span><input id="itemSpacingRange" type="range" min="3" max="22" step="1" value="10"></label>
+				<label class="range-label">Paragraph spacing <span id="paragraphSpacingValue">3 px</span><input id="paragraphSpacingRange" type="range" min="0" max="14" step="1" value="3"></label>
+				<label class="range-label">Line spacing <span id="lineHeightValue">1.40</span><input id="lineHeightRange" type="range" min="1.2" max="1.7" step="0.05" value="1.4"></label>
+				<p class="hint">Use your browser’s “Save as PDF” destination. Turn off browser headers and footers for the cleanest result.</p>
+				<button id="printBtnSide" class="primary full">Generate PDF</button>
+			</aside>
+			<article id="cvPaper" class="cv-paper"></article>
+		</section>
+	</main>
+	
+	<dialog id="editorDialog">
+		<form id="editorForm" method="dialog">
+			<div class="dialog-head"><div><p class="eyebrow" id="dialogEyebrow">EVIDENCE</p><h2 id="dialogTitle">Add evidence</h2></div><button type="button" class="icon-btn close-dialog" aria-label="Close">×</button></div>
+			<div id="editorFields" class="form-grid"></div>
+			<div class="dialog-actions"><button type="button" id="deleteBtn" class="danger">Delete</button><span></span><button type="button" class="ghost close-dialog">Cancel</button><button type="submit" class="primary">Save</button></div>
+		</form>
+	</dialog>
+	
+	<dialog id="backupDialog">
+		<div class="dialog-head"><div><p class="eyebrow">PORTABLE DATA</p><h2>Backup and restore</h2></div><button class="icon-btn close-dialog">×</button></div>
+		<p>Download everything as JSON, or restore a previous Career Canvas backup.</p>
+		<div class="backup-actions"><button id="exportBtn" class="primary">Download backup</button><label class="ghost file-label">Restore backup<input id="restoreInput" type="file" accept="application/json"></label></div>
+	</dialog>
+	
+	<dialog id="importDialog">
+		<div class="dialog-head"><div><p class="eyebrow">ADD CAREER DATA</p><h2>Import records</h2></div><button class="icon-btn close-dialog" aria-label="Close">×</button></div>
+		<p class="dialog-copy">Import adds information to your current evidence bank. Unlike restore, it does not remove records that are not in the file.</p>
+		<label class="import-picker">Career Canvas import file<input id="careerImportInput" type="file" accept="application/json"></label>
+		<div id="importPreview" class="import-preview" hidden></div>
+		<div id="importOptions" class="import-options" hidden>
+			<fieldset><legend>Include</legend><label class="check"><input id="importIdentity" type="checkbox" checked>Professional identity</label><label class="check"><input id="importProfiles" type="checkbox" checked>CV profiles</label><label class="check"><input id="importEntries" type="checkbox" checked>Evidence records</label></fieldset>
+			<label>When an ID already exists<select id="importConflict"><option value="keep">Keep my existing record</option><option value="replace">Use the imported record</option></select></label>
+		</div>
+		<div class="dialog-actions import-actions"><span></span><span></span><button class="ghost close-dialog">Cancel</button><button id="confirmImportBtn" class="primary" disabled>Import data</button></div>
+	</dialog>
+	<div id="toast" role="status" aria-live="polite"></div>
+	<script type="module" src="/app.js"></script>
 </body>
 </html>
