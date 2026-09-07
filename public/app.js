@@ -10,6 +10,14 @@ let activeTag = 'all';
 
 const tagLabels = { clinical:'Clinical', medical:'Medical', leadership:'Leadership', education:'Education', qi:'Quality improvement', technical:'Technical', digital:'Digital', research:'Research', governance:'Governance', speaking:'Speaking' };
 const entryTypes = ['Role', 'Achievement', 'Project', 'Qualification', 'Education', 'Publication', 'Presentation', 'Committee', 'Skill'];
+const fontStacks = {
+  modern: 'Aptos, Calibri, "Segoe UI", Arial, sans-serif',
+  arial: 'Arial, Helvetica, sans-serif',
+  georgia: 'Georgia, "Times New Roman", serif',
+  garamond: 'Garamond, "EB Garamond", Georgia, serif',
+  times: '"Times New Roman", Times, serif',
+  trebuchet: '"Trebuchet MS", "Segoe UI", Arial, sans-serif'
+};
 
 async function init() {
   data = await fetch('/api/data').then(r => { if (!r.ok) throw new Error('Could not load data'); return r.json(); });
@@ -32,10 +40,14 @@ function bind() {
   $('#restoreInput').onchange = restoreData;
   $('#careerImportInput').onchange = previewImport;
   $('#confirmImportBtn').onclick = applyImport;
-  $('#previewProfile').onchange = renderPreview;
+  $('#previewProfile').onchange = () => { loadDocumentControls(); renderPreview(); };
   $('#targetRole').oninput = renderPreview;
   $('#targetOrg').oninput = renderPreview;
   $('#detailRange').oninput = renderPreview;
+  $('#cvAccent').oninput = updateDocumentStyle;
+  $('#cvFont').onchange = updateDocumentStyle;
+  $('#textSizeRange').oninput = updateDocumentStyle;
+  $('#paddingRange').oninput = updateDocumentStyle;
   document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); printCv(); } });
 }
 
@@ -51,6 +63,7 @@ function render() {
   const selected = $('#previewProfile').value;
   $('#previewProfile').innerHTML = data.cvProfiles.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
   if (data.cvProfiles.some(p => p.id === selected)) $('#previewProfile').value = selected;
+  loadDocumentControls();
   renderPreview();
 }
 
@@ -81,7 +94,7 @@ function renderProfiles() {
     return `<article class="profile-card" style="--accent:${safeColour(p.accent)}"><div class="profile-accent"></div><div class="profile-card-head"><span class="profile-icon">${escapeHtml(p.name.slice(0,1))}</span><button class="more" data-edit-profile="${p.id}" aria-label="Edit ${escapeHtml(p.name)}">•••</button></div><h2>${escapeHtml(p.name)}</h2><p>${escapeHtml(p.summary || 'Define the audience and emphasis for this CV.')}</p><div class="tag-row">${(p.tags||[]).map(t=>`<i>${escapeHtml(tagLabels[t]||t)}</i>`).join('')}</div><footer><span>${count} relevant records</span><button data-preview-profile="${p.id}">Preview →</button></footer></article>`;
   }).join('');
   $$('[data-edit-profile]').forEach(b => b.onclick = () => editProfile(b.dataset.editProfile));
-  $$('[data-preview-profile]').forEach(b => b.onclick = () => { $('#previewProfile').value=b.dataset.previewProfile; showView('preview'); });
+  $$('[data-preview-profile]').forEach(b => b.onclick = () => { $('#previewProfile').value=b.dataset.previewProfile; loadDocumentControls(); showView('preview'); });
 }
 
 function rankedEntries(profile) {
@@ -89,9 +102,68 @@ function rankedEntries(profile) {
   return data.entries.map(e => ({...e, score:(e.featured?5:0)+(e.tags||[]).filter(t=>tags.includes(t)).length*3+(e.profiles||[]).includes(profile?.id)*8})).filter(e => e.score > 0 || !tags.length).sort((a,b)=>b.score-a.score || (b.endDate||'').localeCompare(a.endDate||''));
 }
 
+function selectedProfile() {
+  return data.cvProfiles.find(p => p.id === $('#previewProfile').value) || data.cvProfiles[0];
+}
+
+function documentStyle(profile) {
+  const style = profile?.documentStyle || {};
+  return {
+    font: fontStacks[style.font] ? style.font : 'modern',
+    textSize: Math.min(120, Math.max(85, Number(style.textSize) || 100)),
+    padding: Math.min(25, Math.max(10, Number(style.padding) || 16))
+  };
+}
+
+function loadDocumentControls() {
+  const profile = selectedProfile();
+  if (!profile) return;
+  const style = documentStyle(profile);
+  $('#cvAccent').value = safeColour(profile.accent);
+  $('#cvFont').value = style.font;
+  $('#textSizeRange').value = style.textSize;
+  $('#paddingRange').value = style.padding;
+  updateStyleLabels(style);
+}
+
+function updateStyleLabels(style) {
+  $('#textSizeValue').textContent = `${style.textSize}%`;
+  $('#paddingValue').textContent = `${style.padding} mm`;
+}
+
+function updateDocumentStyle() {
+  const profile = selectedProfile();
+  if (!profile) return;
+  profile.accent = safeColour($('#cvAccent').value);
+  profile.documentStyle = {
+    font: $('#cvFont').value,
+    textSize: Number($('#textSizeRange').value),
+    padding: Number($('#paddingRange').value)
+  };
+  updateStyleLabels(documentStyle(profile));
+  renderProfiles(); renderPreview(); queueSave();
+}
+
+function applyDocumentStyle(profile) {
+  const style = documentStyle(profile);
+  const scale = style.textSize / 100;
+  const paper = $('#cvPaper');
+  paper.style.setProperty('--accent', safeColour(profile.accent));
+  paper.style.setProperty('--cv-font', fontStacks[style.font]);
+  paper.style.setProperty('--page-padding', `${style.padding}mm`);
+  paper.style.setProperty('--cv-name-size', `${29 * scale}px`);
+  paper.style.setProperty('--cv-title-size', `${15 * scale}px`);
+  paper.style.setProperty('--cv-section-size', `${12 * scale}px`);
+  paper.style.setProperty('--cv-heading-size', `${11 * scale}px`);
+  paper.style.setProperty('--cv-body-size', `${9.5 * scale}px`);
+  paper.style.setProperty('--cv-profile-size', `${10.5 * scale}px`);
+  paper.style.setProperty('--cv-meta-size', `${9 * scale}px`);
+  $('#printPageStyle').textContent = `@media print { @page { size: A4; margin: ${style.padding}mm; } }`;
+}
+
 function renderPreview() {
   if (!data) return;
-  const profile = data.cvProfiles.find(p => p.id === $('#previewProfile').value) || data.cvProfiles[0];
+  const profile = selectedProfile();
   const level = Number($('#detailRange').value);
   $('#detailValue').textContent = ['Concise','Balanced','Detailed'][level-1];
   if (!profile) { $('#cvPaper').innerHTML='<div class="empty">Create a CV profile first.</div>'; return; }
@@ -106,7 +178,7 @@ function renderPreview() {
   }, {});
   const sections = Object.entries(grouped).map(([title, items]) => `<section class="cv-section"><h2>${escapeHtml(title)}</h2>${items.map(e => `<div class="cv-item"><div class="cv-item-head"><h3>${escapeHtml(e.title)}</h3><time>${escapeHtml(formatDateRange(e))}</time></div>${e.organisation?`<p class="cv-org">${escapeHtml(e.organisation)}</p>`:''}${e.summary?`<p>${escapeHtml(level===1?shorten(e.summary,180):e.summary)}</p>`:''}${level>1&&e.outcomes?`<ul>${e.outcomes.split('\n').filter(Boolean).map(x=>`<li>${escapeHtml(x.replace(/^[•*-]\s*/,''))}</li>`).join('')}</ul>`:''}</div>`).join('')}</section>`).join('');
   const p = data.profile;
-  $('#cvPaper').style.setProperty('--accent', safeColour(profile.accent));
+  applyDocumentStyle(profile);
   $('#cvPaper').innerHTML = `<header class="cv-head"><div><h1>${escapeHtml(p.name || 'Your name')}</h1><p class="cv-title">${escapeHtml(target || profile.title || p.headline || profile.name)}</p>${org?`<p class="cv-target">Prepared for ${escapeHtml(org)}</p>`:''}</div><p class="cv-contact">${[p.postnominals,p.location,p.email,p.phone,p.links].filter(Boolean).map(escapeHtml).join('<br>')}</p></header>${summary?`<section class="cv-intro"><h2>Profile</h2><p>${escapeHtml(summary)}</p></section>`:''}${sections || '<div class="cv-empty"><h2>Your tailored CV will appear here</h2><p>Add evidence and tag it to match this profile.</p></div>'}`;
 }
 
