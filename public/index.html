@@ -6,6 +6,7 @@
   <meta name="description" content="Private evidence bank and tailored CV builder">
   <title>Career Canvas</title>
   <link rel="stylesheet" href="/styles.css">
+  <style id="printPageStyle">@media print { @page { size: A4; margin: 16mm; } }</style>
 </head>
 <body>
   <header class="topbar">
@@ -43,6 +44,11 @@
         <label>Target role<input id="targetRole" placeholder="e.g. Clinical Product Advisor"></label>
         <label>Target organisation<input id="targetOrg" placeholder="e.g. Medical device company"></label>
         <label class="range-label">Detail level <span id="detailValue">Balanced</span><input id="detailRange" type="range" min="1" max="3" value="2"></label>
+        <div class="control-divider"><span>Appearance</span></div>
+        <label class="colour-label">Accent colour<input id="cvAccent" type="color" value="#2563eb"></label>
+        <label>Font<select id="cvFont"><option value="modern">Aptos / Calibri</option><option value="arial">Arial / Helvetica</option><option value="georgia">Georgia</option><option value="garamond">Garamond</option><option value="times">Times New Roman</option><option value="trebuchet">Trebuchet MS</option></select></label>
+        <label class="range-label">Text size <span id="textSizeValue">100%</span><input id="textSizeRange" type="range" min="85" max="120" step="5" value="100"></label>
+        <label class="range-label">Page margins <span id="paddingValue">16 mm</span><input id="paddingRange" type="range" min="10" max="25" step="1" value="16"></label>
         <p class="hint">Use your browser’s “Save as PDF” destination. Turn off browser headers and footers for the cleanest result.</p>
         <button id="printBtnSide" class="primary full">Generate PDF</button>
       </aside>
