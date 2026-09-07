@@ -1,31 +1,63 @@
 # Career Canvas
 
-A private, self-hosted career evidence bank that generates focused medical, leadership and technical CVs from one master record.
+Career Canvas is a private, self-hosted career evidence bank and CV builder. Record an achievement once, tag it by theme, and reuse it across focused medical, leadership, technical or other CV profiles.
 
-## Start it
+It is intentionally small and self-contained: a Node.js server, a browser-based interface, a JSON data file and no external database, analytics service or web font dependency.
+
+## Features
+
+- Store roles, achievements, projects, qualifications, education, publications, presentations, committee work and skills in one evidence bank.
+- Mark ongoing roles so their end date appears as **Present**.
+- Create multiple CV profiles with their own title, summary, priority tags and accent colour.
+- Rank evidence automatically using profile tags, explicit profile relevance and key-evidence status.
+- Generate concise, balanced or detailed CVs and save them as polished PDFs using the browser print dialog.
+- Choose from four layouts and eleven system-safe font stacks.
+- Adjust text size, page margins, section spacing, entry spacing, paragraph spacing and line height for each CV profile.
+- Import selected career records without replacing unrelated data.
+- Download and restore complete JSON backups.
+
+## Quick start with Docker
+
+Requirements:
+
+- Docker with the Compose plugin
+
+Clone the repository and start the app:
 
 ```bash
+git clone https://github.com/jetbackwards/career-canvas.git
+cd career-canvas
 docker compose up -d --build
 ```
 
-Open <http://localhost:3080>. The port is bound to localhost by default, so the application is not exposed to the wider network.
+Open <http://localhost:3080>.
 
-## How it works
+The supplied Compose configuration binds the application to `127.0.0.1`, so it is accessible only from the host machine by default. Career data is stored in the named Docker volume `career_canvas_data`.
 
-1. Complete **Your career evidence** with your identity and individual records.
-2. Tag records using terms such as `clinical`, `leadership`, `education`, `qi`, `technical` and `digital`.
-3. Configure each **CV profile** with priority tags and its own professional summary.
-4. Open **Preview**, select a profile, add the target role or organisation, and choose **Generate PDF**.
-5. Adjust the profile-specific accent colour, layout, font, text size, page margins and content spacing. These choices are saved with the CV profile.
-6. In the browser print window, choose **Save as PDF**, A4 paper, 100% scale, and disable browser headers and footers.
+## Using Career Canvas
 
-Career Canvas keeps section headings with the content that follows them, avoids splitting individual evidence records where possible, and applies the selected margins to every printed page.
+1. Add your professional identity and contact details under **Your career evidence**.
+2. Add individual evidence records and tag them with relevant themes, such as `clinical`, `leadership`, `education`, `qi`, `technical` or `digital`.
+3. Create or edit a **CV profile** and select the tags that matter for that audience.
+4. Open **Preview**, select the profile and optionally enter a target role or organisation.
+5. Adjust the detail level, layout and typography. Appearance choices are saved separately for each CV profile.
+6. Select **Generate PDF**, choose **Save as PDF**, use A4 paper at 100% scale, and disable browser headers and footers.
 
-## Importing career data
+Career Canvas applies the selected page margins throughout the document, keeps headings with the content that follows them and avoids splitting individual evidence records where the browser permits.
 
-Use **Import** to add a Career Canvas import file without replacing unrelated records already in the app. The import screen previews the file, lets the user choose identity, CV profiles and evidence records independently, and offers a conflict policy for matching stable IDs.
+## Data, backups and imports
 
-Import files are deliberately separate from full backups. They use this versioned envelope:
+The application stores all career data in a single JSON file. In Docker this is `/data/career-canvas.json`, persisted by the `career_canvas_data` volume.
+
+Use **Backup** to download a complete portable copy of your data. **Restore backup** replaces the current dataset with that backup.
+
+**Import** behaves differently: it adds selected content to the existing evidence bank. Before applying an import, Career Canvas shows a summary and lets you:
+
+- include or omit the professional identity, CV profiles and evidence records;
+- keep an existing record when an ID matches; or
+- replace it with the imported record.
+
+Import files use this versioned envelope:
 
 ```json
 {
@@ -43,28 +75,59 @@ Import files are deliberately separate from full backups. They use this versione
 }
 ```
 
-Personal import files should not be committed to the repository. The `.gitignore` excludes `*.career-canvas-import.json` files as an additional safeguard.
-
-All records are stored in the Docker volume `career_canvas_data`. Use **Backup** regularly to download a portable JSON copy.
+Personal import files should remain outside the repository. Files ending in `*.career-canvas-import.json`, the local `data/` directory and ZIP archives are excluded by `.gitignore` as additional safeguards.
 
 ## Updating and stopping
 
+Pull the latest code and rebuild the container:
+
 ```bash
-docker compose down
+git pull
 docker compose up -d --build
 ```
 
-`docker compose down` keeps the named data volume. Do not add `-v` unless you intentionally want to delete the stored career data.
+Stop the application with:
 
-## Network access
+```bash
+docker compose down
+```
 
-To make the app available elsewhere on a trusted private network, change the port mapping in `compose.yaml` from `127.0.0.1:3080:3000` to `3080:3000`. If it will ever be internet-accessible, place it behind authentication and HTTPS first.
+The named data volume is retained. Do not add `-v` unless you intentionally want to delete it. Download a backup before upgrades or other significant changes.
 
-## Data model
+## Running without Docker
 
-- **Profile:** identity, contact details and a reusable master summary.
-- **Evidence:** roles, achievements, projects, qualifications, publications, presentations and skills.
-- **CV profiles:** audience-specific titles, summaries, colours and priority tags.
-- **Ranking:** explicit relevance, matching tags and key-evidence status determine the order in each CV.
+Node.js 22 or later is required.
 
-No third-party service, analytics package or external font is used.
+```bash
+npm start
+```
+
+The server listens on <http://localhost:3000> and stores data in `./data/career-canvas.json` by default. Override these locations with the `PORT` and `DATA_FILE` environment variables.
+
+## Development
+
+There is no build step and there are no runtime package dependencies. The browser application is in `public/`, while `server.mjs` serves the static files and provides the JSON persistence API.
+
+Run the syntax checks with:
+
+```bash
+npm run check
+```
+
+The health endpoint is available at `/api/health`.
+
+## Security and privacy
+
+Career Canvas has no authentication or HTTPS support of its own. The default Docker configuration is suitable for local use because it binds only to localhost.
+
+If you expose it to a trusted private network, change the port mapping in `compose.yaml` from `127.0.0.1:3080:3000` to `3080:3000`. Before making it internet-accessible, place it behind appropriate authentication, HTTPS and access controls.
+
+The application does not send career data to a third-party service, but anyone who can reach the application can read and modify its stored data. Treat backups and import files as sensitive documents.
+
+## Contributing
+
+Issues and pull requests are welcome. For substantial changes, opening an issue first is helpful so the proposed approach can be discussed. Please keep personal or identifiable career data out of commits, fixtures and screenshots.
+
+## Licence
+
+A licence has not yet been selected. Until a licence file is added, the source is publicly visible but standard copyright restrictions still apply.
