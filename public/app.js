@@ -4,6 +4,7 @@ const escapeHtml = (v = '') => String(v).replace(/[&<>'"]/g, c => ({'&':'&amp;',
 const id = () => crypto.randomUUID();
 let data;
 let editing = null;
+let pendingImport = null;
 let saveTimer;
 let activeTag = 'all';
 
@@ -23,11 +24,14 @@ function bind() {
   $('#printBtn').onclick = printCv;
   $('#printBtnSide').onclick = printCv;
   $('#backupBtn').onclick = () => $('#backupDialog').showModal();
+  $('#importBtn').onclick = openImport;
   $$('.close-dialog').forEach(b => b.onclick = () => b.closest('dialog').close());
   $('#editorForm').onsubmit = saveEditor;
   $('#deleteBtn').onclick = deleteEditor;
   $('#exportBtn').onclick = exportData;
-  $('#importInput').onchange = importData;
+  $('#restoreInput').onchange = restoreData;
+  $('#careerImportInput').onchange = previewImport;
+  $('#confirmImportBtn').onclick = applyImport;
   $('#previewProfile').onchange = renderPreview;
   $('#targetRole').oninput = renderPreview;
   $('#targetOrg').oninput = renderPreview;
@@ -167,7 +171,90 @@ function queueSave() {
 
 function printCv() { showView('preview'); requestAnimationFrame(()=>window.print()); }
 function exportData() { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})); a.download=`career-canvas-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
-async function importData(event) { const file=event.target.files[0]; if(!file)return; try { const incoming=JSON.parse(await file.text()); if(!incoming.profile||!Array.isArray(incoming.entries)||!Array.isArray(incoming.cvProfiles))throw new Error(); if(!confirm(`Restore ${incoming.entries.length} evidence records and replace the current data?`))return; data=incoming; render(); queueSave(); $('#backupDialog').close(); toast('Backup restored'); } catch { toast('That file is not a valid Career Canvas backup.'); } finally { event.target.value=''; } }
+async function restoreData(event) { const file=event.target.files[0]; if(!file)return; try { const incoming=JSON.parse(await file.text()); if(!incoming.profile||!Array.isArray(incoming.entries)||!Array.isArray(incoming.cvProfiles))throw new Error(); if(!confirm(`Restore ${incoming.entries.length} evidence records and replace the current data?`))return; data=incoming; render(); queueSave(); $('#backupDialog').close(); toast('Backup restored'); } catch { toast('That file is not a valid Career Canvas backup.'); } finally { event.target.value=''; } }
+
+function openImport() {
+  pendingImport = null;
+  $('#careerImportInput').value = '';
+  $('#importPreview').hidden = true;
+  $('#importOptions').hidden = true;
+  $('#confirmImportBtn').disabled = true;
+  $('#importDialog').showModal();
+}
+
+function validateImportFile(raw) {
+  if (raw?.kind !== 'career-canvas-import' || raw?.schemaVersion !== 1 || !raw.payload) throw new Error('Unsupported import format');
+  const payload = raw.payload;
+  if (payload.profile && typeof payload.profile !== 'object') throw new Error('Invalid profile');
+  if (payload.cvProfiles && !Array.isArray(payload.cvProfiles)) throw new Error('Invalid CV profiles');
+  if (payload.entries && !Array.isArray(payload.entries)) throw new Error('Invalid evidence records');
+  if (!payload.profile && !payload.cvProfiles?.length && !payload.entries?.length) throw new Error('The import contains no data');
+  for (const item of [...(payload.cvProfiles || []), ...(payload.entries || [])]) {
+    if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !item.id.trim()) throw new Error('Every imported record needs an ID');
+  }
+  if (JSON.stringify(raw).length > 2 * 1024 * 1024) throw new Error('The import file is too large');
+  return payload;
+}
+
+async function previewImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const raw = JSON.parse(await file.text());
+    const payload = validateImportFile(raw);
+    pendingImport = { raw, payload };
+    const source = raw.metadata?.source ? `<p>Source: ${escapeHtml(raw.metadata.source)}</p>` : '';
+    $('#importPreview').innerHTML = `<strong>${escapeHtml(raw.metadata?.title || file.name)}</strong>${source}<dl><div><dt>${payload.profile ? 1 : 0}</dt><dd>identity</dd></div><div><dt>${payload.cvProfiles?.length || 0}</dt><dd>CV profiles</dd></div><div><dt>${payload.entries?.length || 0}</dt><dd>evidence records</dd></div></dl>`;
+    $('#importPreview').hidden = false;
+    $('#importOptions').hidden = false;
+    $('#importIdentity').disabled = !payload.profile;
+    $('#importProfiles').disabled = !payload.cvProfiles?.length;
+    $('#importEntries').disabled = !payload.entries?.length;
+    $('#confirmImportBtn').disabled = false;
+  } catch (error) {
+    pendingImport = null;
+    $('#importPreview').innerHTML = `<strong>Unable to use this file</strong><p>${escapeHtml(error.message || 'Invalid JSON file')}</p>`;
+    $('#importPreview').hidden = false;
+    $('#importOptions').hidden = true;
+    $('#confirmImportBtn').disabled = true;
+  }
+}
+
+function mergeById(current, incoming, replace) {
+  const result = [...current];
+  let added = 0, updated = 0, skipped = 0;
+  for (const item of incoming || []) {
+    const index = result.findIndex(existing => existing.id === item.id);
+    if (index < 0) { result.push(item); added += 1; }
+    else if (replace) { result[index] = item; updated += 1; }
+    else skipped += 1;
+  }
+  return { result, added, updated, skipped };
+}
+
+function applyImport() {
+  if (!pendingImport) return;
+  const payload = pendingImport.payload;
+  const replace = $('#importConflict').value === 'replace';
+  const totals = { added: 0, updated: 0, skipped: 0 };
+  if ($('#importIdentity').checked && payload.profile) {
+    for (const [key, value] of Object.entries(payload.profile)) {
+      if (replace || !data.profile[key]) data.profile[key] = value;
+    }
+  }
+  if ($('#importProfiles').checked) {
+    const merged = mergeById(data.cvProfiles, payload.cvProfiles, replace);
+    data.cvProfiles = merged.result;
+    totals.added += merged.added; totals.updated += merged.updated; totals.skipped += merged.skipped;
+  }
+  if ($('#importEntries').checked) {
+    const merged = mergeById(data.entries, payload.entries, replace);
+    data.entries = merged.result;
+    totals.added += merged.added; totals.updated += merged.updated; totals.skipped += merged.skipped;
+  }
+  render(); queueSave(); $('#importDialog').close();
+  toast(`Import complete: ${totals.added} added, ${totals.updated} updated${totals.skipped ? `, ${totals.skipped} kept` : ''}.`);
+}
 function toast(message){ const t=$('#toast');t.textContent=message;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500); }
 
 init().catch(()=>{ document.body.innerHTML='<main class="fatal"><h1>Career Canvas could not start</h1><p>Check that the server can write to its data volume, then reload.</p></main>'; });

@@ -18,6 +18,30 @@ Open <http://localhost:3080>. The port is bound to localhost by default, so the 
 4. Open **Preview**, select a profile, add the target role or organisation, and choose **Generate PDF**.
 5. In the browser print window, choose **Save as PDF**, A4 paper, 100% scale, and disable browser headers and footers.
 
+## Importing career data
+
+Use **Import** to add a Career Canvas import file without replacing unrelated records already in the app. The import screen previews the file, lets the user choose identity, CV profiles and evidence records independently, and offers a conflict policy for matching stable IDs.
+
+Import files are deliberately separate from full backups. They use this versioned envelope:
+
+```json
+{
+  "kind": "career-canvas-import",
+  "schemaVersion": 1,
+  "metadata": {
+    "title": "Example career history",
+    "source": "Prepared from an existing CV"
+  },
+  "payload": {
+    "profile": {},
+    "cvProfiles": [],
+    "entries": []
+  }
+}
+```
+
+Personal import files should not be committed to the repository. The `.gitignore` excludes `*.career-canvas-import.json` files as an additional safeguard.
+
 All records are stored in the Docker volume `career_canvas_data`. Use **Backup** regularly to download a portable JSON copy.
 
 ## Updating and stopping

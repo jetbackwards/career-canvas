@@ -15,7 +15,7 @@
       <button class="nav" data-view="profiles">CV profiles</button>
       <button class="nav" data-view="preview">Preview</button>
     </nav>
-    <div class="actions"><span id="saveState" class="save-state">Saved</span><button id="backupBtn" class="ghost">Backup</button><button id="printBtn" class="primary">Generate PDF</button></div>
+    <div class="actions"><span id="saveState" class="save-state">Saved</span><button id="importBtn" class="ghost">Import</button><button id="backupBtn" class="ghost">Backup</button><button id="printBtn" class="primary">Generate PDF</button></div>
   </header>
 
   <main>
@@ -61,7 +61,19 @@
   <dialog id="backupDialog">
     <div class="dialog-head"><div><p class="eyebrow">PORTABLE DATA</p><h2>Backup and restore</h2></div><button class="icon-btn close-dialog">×</button></div>
     <p>Download everything as JSON, or restore a previous Career Canvas backup.</p>
-    <div class="backup-actions"><button id="exportBtn" class="primary">Download backup</button><label class="ghost file-label">Restore backup<input id="importInput" type="file" accept="application/json"></label></div>
+    <div class="backup-actions"><button id="exportBtn" class="primary">Download backup</button><label class="ghost file-label">Restore backup<input id="restoreInput" type="file" accept="application/json"></label></div>
+  </dialog>
+
+  <dialog id="importDialog">
+    <div class="dialog-head"><div><p class="eyebrow">ADD CAREER DATA</p><h2>Import records</h2></div><button class="icon-btn close-dialog" aria-label="Close">×</button></div>
+    <p class="dialog-copy">Import adds information to your current evidence bank. Unlike restore, it does not remove records that are not in the file.</p>
+    <label class="import-picker">Career Canvas import file<input id="careerImportInput" type="file" accept="application/json"></label>
+    <div id="importPreview" class="import-preview" hidden></div>
+    <div id="importOptions" class="import-options" hidden>
+      <fieldset><legend>Include</legend><label class="check"><input id="importIdentity" type="checkbox" checked>Professional identity</label><label class="check"><input id="importProfiles" type="checkbox" checked>CV profiles</label><label class="check"><input id="importEntries" type="checkbox" checked>Evidence records</label></fieldset>
+      <label>When an ID already exists<select id="importConflict"><option value="keep">Keep my existing record</option><option value="replace">Use the imported record</option></select></label>
+    </div>
+    <div class="dialog-actions import-actions"><span></span><span></span><button class="ghost close-dialog">Cancel</button><button id="confirmImportBtn" class="primary" disabled>Import data</button></div>
   </dialog>
   <div id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="/app.js"></script>

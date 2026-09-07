@@ -1,0 +1,4 @@
+node_modules/
+data/
+*.career-canvas-import.json
+*.zip
