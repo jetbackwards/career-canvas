@@ -16,7 +16,10 @@ Open <http://localhost:3080>. The port is bound to localhost by default, so the 
 2. Tag records using terms such as `clinical`, `leadership`, `education`, `qi`, `technical` and `digital`.
 3. Configure each **CV profile** with priority tags and its own professional summary.
 4. Open **Preview**, select a profile, add the target role or organisation, and choose **Generate PDF**.
-5. In the browser print window, choose **Save as PDF**, A4 paper, 100% scale, and disable browser headers and footers.
+5. Adjust the profile-specific accent colour, font, text size and page margins. These choices are saved with the CV profile.
+6. In the browser print window, choose **Save as PDF**, A4 paper, 100% scale, and disable browser headers and footers.
+
+Career Canvas keeps section headings with the content that follows them, avoids splitting individual evidence records where possible, and applies the selected margins to every printed page.
 
 ## Importing career data
 
