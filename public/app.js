@@ -1,0 +1,173 @@
+const $ = (s, root = document) => root.querySelector(s);
+const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+const escapeHtml = (v = '') => String(v).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const id = () => crypto.randomUUID();
+let data;
+let editing = null;
+let saveTimer;
+let activeTag = 'all';
+
+const tagLabels = { clinical:'Clinical', medical:'Medical', leadership:'Leadership', education:'Education', qi:'Quality improvement', technical:'Technical', digital:'Digital', research:'Research', governance:'Governance', speaking:'Speaking' };
+const entryTypes = ['Role', 'Achievement', 'Project', 'Qualification', 'Education', 'Publication', 'Presentation', 'Committee', 'Skill'];
+
+async function init() {
+  data = await fetch('/api/data').then(r => { if (!r.ok) throw new Error('Could not load data'); return r.json(); });
+  bind(); render();
+}
+
+function bind() {
+  $$('.nav').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+  $('#addEntryBtn').onclick = () => editEntry();
+  $('#addProfileBtn').onclick = () => editProfile();
+  $('#searchInput').oninput = renderEntries;
+  $('#printBtn').onclick = printCv;
+  $('#printBtnSide').onclick = printCv;
+  $('#backupBtn').onclick = () => $('#backupDialog').showModal();
+  $$('.close-dialog').forEach(b => b.onclick = () => b.closest('dialog').close());
+  $('#editorForm').onsubmit = saveEditor;
+  $('#deleteBtn').onclick = deleteEditor;
+  $('#exportBtn').onclick = exportData;
+  $('#importInput').onchange = importData;
+  $('#previewProfile').onchange = renderPreview;
+  $('#targetRole').oninput = renderPreview;
+  $('#targetOrg').oninput = renderPreview;
+  $('#detailRange').oninput = renderPreview;
+  document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); printCv(); } });
+}
+
+function showView(name) {
+  $$('.nav').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  $$('.view').forEach(v => v.classList.remove('active'));
+  $(`#${name}View`).classList.add('active');
+  if (name === 'preview') renderPreview();
+}
+
+function render() {
+  renderIdentity(); renderFilters(); renderEntries(); renderProfiles();
+  const selected = $('#previewProfile').value;
+  $('#previewProfile').innerHTML = data.cvProfiles.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  if (data.cvProfiles.some(p => p.id === selected)) $('#previewProfile').value = selected;
+  renderPreview();
+}
+
+function renderIdentity() {
+  const p = data.profile;
+  $('#identityCard').innerHTML = `<button class="identity-main" id="editIdentity"><span class="avatar">${escapeHtml((p.name || 'You').split(/\s+/).map(x=>x[0]).slice(0,2).join(''))}</span><span><strong>${escapeHtml(p.name || 'Add your name and professional identity')}</strong><small>${escapeHtml(p.headline || 'Title, credentials and contact details')}</small></span><span class="edit-link">Edit profile →</span></button><div class="stats"><span><strong>${data.entries.length}</strong><small>evidence records</small></span><span><strong>${data.cvProfiles.length}</strong><small>CV profiles</small></span></div>`;
+  $('#editIdentity').onclick = editIdentity;
+}
+
+function allTags() { return [...new Set(data.entries.flatMap(e => e.tags || []))].sort(); }
+function renderFilters() {
+  const tags = allTags();
+  if (activeTag !== 'all' && !tags.includes(activeTag)) activeTag = 'all';
+  $('#tagFilters').innerHTML = ['all', ...tags].map(t => `<button class="chip ${activeTag===t?'active':''}" data-tag="${escapeHtml(t)}">${escapeHtml(t === 'all' ? 'All evidence' : (tagLabels[t] || t))}</button>`).join('');
+  $$('.chip', $('#tagFilters')).forEach(b => b.onclick = () => { activeTag = b.dataset.tag; renderFilters(); renderEntries(); });
+}
+
+function renderEntries() {
+  const q = ($('#searchInput').value || '').toLowerCase();
+  const rows = data.entries.filter(e => (activeTag === 'all' || (e.tags||[]).includes(activeTag)) && JSON.stringify(e).toLowerCase().includes(q)).sort((a,b) => (b.endDate||b.startDate||'').localeCompare(a.endDate||a.startDate||''));
+  $('#entryList').innerHTML = rows.length ? rows.map(e => `<button class="entry-card" data-id="${e.id}"><span class="entry-date">${escapeHtml(formatDateRange(e))}</span><span class="entry-body"><span class="entry-top"><span class="type">${escapeHtml(e.type)}</span>${e.featured?'<span class="featured">Key evidence</span>':''}</span><strong>${escapeHtml(e.title)}</strong><small>${escapeHtml(e.organisation || e.subtitle || '')}</small><span class="entry-summary">${escapeHtml(e.summary || '')}</span><span class="tag-row">${(e.tags||[]).map(t=>`<i>${escapeHtml(tagLabels[t]||t)}</i>`).join('')}</span></span><span class="chevron">›</span></button>`).join('') : `<div class="empty"><div class="empty-icon">＋</div><h3>${q || activeTag !== 'all' ? 'No matching evidence' : 'Build your evidence bank'}</h3><p>${q || activeTag !== 'all' ? 'Try another search or filter.' : 'Add a role, achievement, project or qualification. You can decide later which CVs should use it.'}</p></div>`;
+  $$('.entry-card').forEach(b => b.onclick = () => editEntry(b.dataset.id));
+}
+
+function renderProfiles() {
+  $('#profileGrid').innerHTML = data.cvProfiles.map(p => {
+    const count = rankedEntries(p).length;
+    return `<article class="profile-card" style="--accent:${safeColour(p.accent)}"><div class="profile-accent"></div><div class="profile-card-head"><span class="profile-icon">${escapeHtml(p.name.slice(0,1))}</span><button class="more" data-edit-profile="${p.id}" aria-label="Edit ${escapeHtml(p.name)}">•••</button></div><h2>${escapeHtml(p.name)}</h2><p>${escapeHtml(p.summary || 'Define the audience and emphasis for this CV.')}</p><div class="tag-row">${(p.tags||[]).map(t=>`<i>${escapeHtml(tagLabels[t]||t)}</i>`).join('')}</div><footer><span>${count} relevant records</span><button data-preview-profile="${p.id}">Preview →</button></footer></article>`;
+  }).join('');
+  $$('[data-edit-profile]').forEach(b => b.onclick = () => editProfile(b.dataset.editProfile));
+  $$('[data-preview-profile]').forEach(b => b.onclick = () => { $('#previewProfile').value=b.dataset.previewProfile; showView('preview'); });
+}
+
+function rankedEntries(profile) {
+  const tags = profile?.tags || [];
+  return data.entries.map(e => ({...e, score:(e.featured?5:0)+(e.tags||[]).filter(t=>tags.includes(t)).length*3+(e.profiles||[]).includes(profile?.id)*8})).filter(e => e.score > 0 || !tags.length).sort((a,b)=>b.score-a.score || (b.endDate||'').localeCompare(a.endDate||''));
+}
+
+function renderPreview() {
+  if (!data) return;
+  const profile = data.cvProfiles.find(p => p.id === $('#previewProfile').value) || data.cvProfiles[0];
+  const level = Number($('#detailRange').value);
+  $('#detailValue').textContent = ['Concise','Balanced','Detailed'][level-1];
+  if (!profile) { $('#cvPaper').innerHTML='<div class="empty">Create a CV profile first.</div>'; return; }
+  const entries = rankedEntries(profile);
+  const target = $('#targetRole').value.trim();
+  const org = $('#targetOrg').value.trim();
+  const summary = profile.summary || data.profile.summary;
+  const grouped = entries.reduce((groups, entry) => {
+    const section = ['Qualification','Education','Skill'].includes(entry.type) ? entry.type : 'Experience & impact';
+    (groups[section] ||= []).push(entry);
+    return groups;
+  }, {});
+  const sections = Object.entries(grouped).map(([title, items]) => `<section class="cv-section"><h2>${escapeHtml(title)}</h2>${items.map(e => `<div class="cv-item"><div class="cv-item-head"><h3>${escapeHtml(e.title)}</h3><time>${escapeHtml(formatDateRange(e))}</time></div>${e.organisation?`<p class="cv-org">${escapeHtml(e.organisation)}</p>`:''}${e.summary?`<p>${escapeHtml(level===1?shorten(e.summary,180):e.summary)}</p>`:''}${level>1&&e.outcomes?`<ul>${e.outcomes.split('\n').filter(Boolean).map(x=>`<li>${escapeHtml(x.replace(/^[•*-]\s*/,''))}</li>`).join('')}</ul>`:''}</div>`).join('')}</section>`).join('');
+  const p = data.profile;
+  $('#cvPaper').style.setProperty('--accent', safeColour(profile.accent));
+  $('#cvPaper').innerHTML = `<header class="cv-head"><div><h1>${escapeHtml(p.name || 'Your name')}</h1><p class="cv-title">${escapeHtml(target || profile.title || p.headline || profile.name)}</p>${org?`<p class="cv-target">Prepared for ${escapeHtml(org)}</p>`:''}</div><p class="cv-contact">${[p.postnominals,p.location,p.email,p.phone,p.links].filter(Boolean).map(escapeHtml).join('<br>')}</p></header>${summary?`<section class="cv-intro"><h2>Profile</h2><p>${escapeHtml(summary)}</p></section>`:''}${sections || '<div class="cv-empty"><h2>Your tailored CV will appear here</h2><p>Add evidence and tag it to match this profile.</p></div>'}`;
+}
+
+function field(label, name, value='', type='text', extra='') {
+  if (type === 'textarea') return `<label class="span-2">${label}<textarea name="${name}" ${extra}>${escapeHtml(value)}</textarea></label>`;
+  return `<label>${label}<input name="${name}" type="${type}" value="${escapeHtml(value)}" ${extra}></label>`;
+}
+
+function editIdentity() {
+  editing = { kind:'identity' }; const p=data.profile;
+  $('#dialogEyebrow').textContent='MASTER PROFILE'; $('#dialogTitle').textContent='Professional identity'; $('#deleteBtn').hidden=true;
+  $('#editorFields').innerHTML = field('Full name','name',p.name)+field('Postnominals','postnominals',p.postnominals)+field('Professional headline','headline',p.headline)+field('Location','location',p.location)+field('Email','email',p.email,'email')+field('Phone','phone',p.phone)+field('Links','links',p.links)+field('Master summary','summary',p.summary,'textarea','rows="5"');
+  $('#editorDialog').showModal();
+}
+
+function editEntry(entryId) {
+  const e = data.entries.find(x=>x.id===entryId) || { id:id(), type:'Achievement', title:'', subtitle:'', organisation:'', startDate:'', endDate:'', current:false, summary:'', outcomes:'', tags:[], featured:false, profiles:[] };
+  editing={kind:'entry',id:e.id,isNew:!entryId}; $('#dialogEyebrow').textContent='EVIDENCE'; $('#dialogTitle').textContent=entryId?'Edit evidence':'Add evidence'; $('#deleteBtn').hidden=!entryId;
+  $('#editorFields').innerHTML = `<label>Type<select name="type">${entryTypes.map(t=>`<option ${e.type===t?'selected':''}>${t}</option>`).join('')}</select></label>`+field('Title','title',e.title,'text','required')+field('Organisation','organisation',e.organisation)+field('Supporting line','subtitle',e.subtitle)+field('Start date','startDate',e.startDate,'month')+field('End date','endDate',e.endDate,'month')+field('Summary','summary',e.summary,'textarea','rows="4"')+field('Outcomes — one per line','outcomes',e.outcomes,'textarea','rows="4"')+`<label class="span-2">Tags<input name="tags" value="${escapeHtml((e.tags||[]).join(', '))}" placeholder="clinical, leadership, technical"></label><label class="check span-2"><input name="featured" type="checkbox" ${e.featured?'checked':''}>Treat as key evidence across profiles</label>`;
+  $('#editorDialog').showModal();
+}
+
+function editProfile(profileId) {
+  const p=data.cvProfiles.find(x=>x.id===profileId)||{id:id(),name:'',title:'',summary:'',accent:'#2563eb',tags:[],maxPages:2};
+  editing={kind:'profile',id:p.id,isNew:!profileId}; $('#dialogEyebrow').textContent='CV PROFILE'; $('#dialogTitle').textContent=profileId?'Edit CV profile':'New CV profile'; $('#deleteBtn').hidden=!profileId;
+  $('#editorFields').innerHTML=field('Profile name','name',p.name,'text','required')+field('Default CV title','title',p.title)+field('Accent colour','accent',p.accent,'color')+field('Target pages','maxPages',p.maxPages,'number','min="1" max="5"')+field('Profile summary','summary',p.summary,'textarea','rows="5"')+`<label class="span-2">Priority tags<input name="tags" value="${escapeHtml((p.tags||[]).join(', '))}" placeholder="technical, digital, leadership"></label>`;
+  $('#editorDialog').showModal();
+}
+
+function formObject(form) { const f=new FormData(form); return Object.fromEntries(f.entries()); }
+function saveEditor(event) {
+  event.preventDefault(); const value=formObject(event.target);
+  if (editing.kind==='identity') data.profile={...data.profile,...value};
+  if (editing.kind==='entry') {
+    value.id=editing.id; value.tags=parseTags(value.tags); value.featured=$('[name=featured]',event.target).checked;
+    const i=data.entries.findIndex(e=>e.id===editing.id); i<0?data.entries.push(value):data.entries[i]=value;
+  }
+  if (editing.kind==='profile') {
+    value.id=editing.id; value.tags=parseTags(value.tags); value.maxPages=Number(value.maxPages)||2;
+    const i=data.cvProfiles.findIndex(p=>p.id===editing.id); i<0?data.cvProfiles.push(value):data.cvProfiles[i]=value;
+  }
+  $('#editorDialog').close(); render(); queueSave();
+}
+
+function deleteEditor() {
+  if (!confirm('Delete this record? This cannot be undone after it is saved.')) return;
+  if (editing.kind==='entry') data.entries=data.entries.filter(e=>e.id!==editing.id);
+  if (editing.kind==='profile') data.cvProfiles=data.cvProfiles.filter(p=>p.id!==editing.id);
+  $('#editorDialog').close(); render(); queueSave();
+}
+
+function parseTags(value='') { return [...new Set(value.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean))]; }
+function safeColour(value='') { return /^#[0-9a-f]{6}$/i.test(value)?value:'#2563eb'; }
+function formatDate(value) { if(!value)return ''; const [y,m]=value.split('-'); return m?new Date(Date.UTC(+y,+m-1,1)).toLocaleDateString('en-GB',{month:'short',year:'numeric'}):y; }
+function formatDateRange(e) { const start=formatDate(e.startDate), end=e.current?'Present':formatDate(e.endDate); return start&&end?`${start} – ${end}`:end||start||''; }
+function shorten(s,n){ return s.length>n?s.slice(0,n).replace(/\s+\S*$/,'')+'…':s; }
+
+function queueSave() {
+  clearTimeout(saveTimer); $('#saveState').textContent='Saving…'; $('#saveState').classList.add('saving');
+  saveTimer=setTimeout(async()=>{ try { const r=await fetch('/api/data',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(data)}); if(!r.ok)throw new Error(); $('#saveState').textContent='Saved'; $('#saveState').classList.remove('saving'); } catch { $('#saveState').textContent='Save failed'; toast('Could not save. Download a backup before closing.'); } },400);
+}
+
+function printCv() { showView('preview'); requestAnimationFrame(()=>window.print()); }
+function exportData() { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})); a.download=`career-canvas-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); }
+async function importData(event) { const file=event.target.files[0]; if(!file)return; try { const incoming=JSON.parse(await file.text()); if(!incoming.profile||!Array.isArray(incoming.entries)||!Array.isArray(incoming.cvProfiles))throw new Error(); if(!confirm(`Restore ${incoming.entries.length} evidence records and replace the current data?`))return; data=incoming; render(); queueSave(); $('#backupDialog').close(); toast('Backup restored'); } catch { toast('That file is not a valid Career Canvas backup.'); } finally { event.target.value=''; } }
+function toast(message){ const t=$('#toast');t.textContent=message;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500); }
+
+init().catch(()=>{ document.body.innerHTML='<main class="fatal"><h1>Career Canvas could not start</h1><p>Check that the server can write to its data volume, then reload.</p></main>'; });

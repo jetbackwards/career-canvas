@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Private evidence bank and tailored CV builder">
+  <title>Career Canvas</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#evidence" aria-label="Career Canvas home"><span class="brandmark">CC</span><span>Career Canvas</span></a>
+    <nav aria-label="Main navigation">
+      <button class="nav active" data-view="evidence">Evidence bank</button>
+      <button class="nav" data-view="profiles">CV profiles</button>
+      <button class="nav" data-view="preview">Preview</button>
+    </nav>
+    <div class="actions"><span id="saveState" class="save-state">Saved</span><button id="backupBtn" class="ghost">Backup</button><button id="printBtn" class="primary">Generate PDF</button></div>
+  </header>
+
+  <main>
+    <section id="evidenceView" class="view active">
+      <div class="workspace-head">
+        <div><p class="eyebrow">MASTER RECORD</p><h1>Your career evidence</h1><p>Capture each achievement once. Profiles decide what earns space in a CV.</p></div>
+        <button id="addEntryBtn" class="primary">+ Add evidence</button>
+      </div>
+      <section class="profile-strip" id="identityCard"></section>
+      <div class="filter-row">
+        <input id="searchInput" type="search" placeholder="Search achievements, roles or tags…" aria-label="Search evidence">
+        <div id="tagFilters" class="chips" aria-label="Filter by tag"></div>
+      </div>
+      <div id="entryList" class="entry-list"></div>
+    </section>
+
+    <section id="profilesView" class="view">
+      <div class="workspace-head"><div><p class="eyebrow">TAILORING RULES</p><h1>CV profiles</h1><p>Choose a focus and the evidence bank is ranked around it.</p></div><button id="addProfileBtn" class="primary">+ New profile</button></div>
+      <div id="profileGrid" class="profile-grid"></div>
+    </section>
+
+    <section id="previewView" class="view preview-workspace">
+      <aside class="preview-controls">
+        <label>CV profile<select id="previewProfile"></select></label>
+        <label>Target role<input id="targetRole" placeholder="e.g. Clinical Product Advisor"></label>
+        <label>Target organisation<input id="targetOrg" placeholder="e.g. Medical device company"></label>
+        <label class="range-label">Detail level <span id="detailValue">Balanced</span><input id="detailRange" type="range" min="1" max="3" value="2"></label>
+        <p class="hint">Use your browser’s “Save as PDF” destination. Turn off browser headers and footers for the cleanest result.</p>
+        <button id="printBtnSide" class="primary full">Generate PDF</button>
+      </aside>
+      <article id="cvPaper" class="cv-paper"></article>
+    </section>
+  </main>
+
+  <dialog id="editorDialog">
+    <form id="editorForm" method="dialog">
+      <div class="dialog-head"><div><p class="eyebrow" id="dialogEyebrow">EVIDENCE</p><h2 id="dialogTitle">Add evidence</h2></div><button type="button" class="icon-btn close-dialog" aria-label="Close">×</button></div>
+      <div id="editorFields" class="form-grid"></div>
+      <div class="dialog-actions"><button type="button" id="deleteBtn" class="danger">Delete</button><span></span><button type="button" class="ghost close-dialog">Cancel</button><button type="submit" class="primary">Save</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="backupDialog">
+    <div class="dialog-head"><div><p class="eyebrow">PORTABLE DATA</p><h2>Backup and restore</h2></div><button class="icon-btn close-dialog">×</button></div>
+    <p>Download everything as JSON, or restore a previous Career Canvas backup.</p>
+    <div class="backup-actions"><button id="exportBtn" class="primary">Download backup</button><label class="ghost file-label">Restore backup<input id="importInput" type="file" accept="application/json"></label></div>
+  </dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
