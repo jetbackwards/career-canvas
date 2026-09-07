@@ -125,7 +125,12 @@ function editIdentity() {
 function editEntry(entryId) {
   const e = data.entries.find(x=>x.id===entryId) || { id:id(), type:'Achievement', title:'', subtitle:'', organisation:'', startDate:'', endDate:'', current:false, summary:'', outcomes:'', tags:[], featured:false, profiles:[] };
   editing={kind:'entry',id:e.id,isNew:!entryId}; $('#dialogEyebrow').textContent='EVIDENCE'; $('#dialogTitle').textContent=entryId?'Edit evidence':'Add evidence'; $('#deleteBtn').hidden=!entryId;
-  $('#editorFields').innerHTML = `<label>Type<select name="type">${entryTypes.map(t=>`<option ${e.type===t?'selected':''}>${t}</option>`).join('')}</select></label>`+field('Title','title',e.title,'text','required')+field('Organisation','organisation',e.organisation)+field('Supporting line','subtitle',e.subtitle)+field('Start date','startDate',e.startDate,'month')+field('End date','endDate',e.endDate,'month')+field('Summary','summary',e.summary,'textarea','rows="4"')+field('Outcomes — one per line','outcomes',e.outcomes,'textarea','rows="4"')+`<label class="span-2">Tags<input name="tags" value="${escapeHtml((e.tags||[]).join(', '))}" placeholder="clinical, leadership, technical"></label><label class="check span-2"><input name="featured" type="checkbox" ${e.featured?'checked':''}>Treat as key evidence across profiles</label>`;
+  $('#editorFields').innerHTML = `<label>Type<select name="type">${entryTypes.map(t=>`<option ${e.type===t?'selected':''}>${t}</option>`).join('')}</select></label>`+field('Title','title',e.title,'text','required')+field('Organisation','organisation',e.organisation)+field('Supporting line','subtitle',e.subtitle)+field('Start date','startDate',e.startDate,'month')+field('End date','endDate',e.endDate,'month',`${e.current?'disabled':''}`)+`<label class="check span-2"><input name="current" type="checkbox" ${e.current?'checked':''}>This is current — show the end date as Present</label>`+field('Summary','summary',e.summary,'textarea','rows="4"')+field('Outcomes — one per line','outcomes',e.outcomes,'textarea','rows="4"')+`<label class="span-2">Tags<input name="tags" value="${escapeHtml((e.tags||[]).join(', '))}" placeholder="clinical, leadership, technical"></label><label class="check span-2"><input name="featured" type="checkbox" ${e.featured?'checked':''}>Treat as key evidence across profiles</label>`;
+  $('[name=current]', $('#editorForm')).onchange = event => {
+    const endDate = $('[name=endDate]', $('#editorForm'));
+    endDate.disabled = event.target.checked;
+    if (event.target.checked) endDate.value = '';
+  };
   $('#editorDialog').showModal();
 }
 
@@ -141,7 +146,7 @@ function saveEditor(event) {
   event.preventDefault(); const value=formObject(event.target);
   if (editing.kind==='identity') data.profile={...data.profile,...value};
   if (editing.kind==='entry') {
-    value.id=editing.id; value.tags=parseTags(value.tags); value.featured=$('[name=featured]',event.target).checked;
+    value.id=editing.id; value.tags=parseTags(value.tags); value.featured=$('[name=featured]',event.target).checked; value.current=$('[name=current]',event.target).checked; if (value.current) value.endDate='';
     const i=data.entries.findIndex(e=>e.id===editing.id); i<0?data.entries.push(value):data.entries[i]=value;
   }
   if (editing.kind==='profile') {
