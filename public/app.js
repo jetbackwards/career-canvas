@@ -13,11 +13,17 @@ const entryTypes = ['Role', 'Achievement', 'Project', 'Qualification', 'Educatio
 const fontStacks = {
   modern: 'Aptos, Calibri, "Segoe UI", Arial, sans-serif',
   arial: 'Arial, Helvetica, sans-serif',
+  tahoma: 'Tahoma, Verdana, "Segoe UI", sans-serif',
+  century: '"Century Gothic", Futura, "Trebuchet MS", sans-serif',
   georgia: 'Georgia, "Times New Roman", serif',
+  cambria: 'Cambria, Georgia, "Times New Roman", serif',
   garamond: 'Garamond, "EB Garamond", Georgia, serif',
+  palatino: '"Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif',
+  baskerville: 'Baskerville, "Baskerville Old Face", "Times New Roman", serif',
   times: '"Times New Roman", Times, serif',
   trebuchet: '"Trebuchet MS", "Segoe UI", Arial, sans-serif'
 };
+const layouts = new Set(['classic', 'contemporary', 'centred', 'minimal']);
 
 async function init() {
   data = await fetch('/api/data').then(r => { if (!r.ok) throw new Error('Could not load data'); return r.json(); });
@@ -45,9 +51,14 @@ function bind() {
   $('#targetOrg').oninput = renderPreview;
   $('#detailRange').oninput = renderPreview;
   $('#cvAccent').oninput = updateDocumentStyle;
+  $('#cvLayout').onchange = updateDocumentStyle;
   $('#cvFont').onchange = updateDocumentStyle;
   $('#textSizeRange').oninput = updateDocumentStyle;
   $('#paddingRange').oninput = updateDocumentStyle;
+  $('#sectionSpacingRange').oninput = updateDocumentStyle;
+  $('#itemSpacingRange').oninput = updateDocumentStyle;
+  $('#paragraphSpacingRange').oninput = updateDocumentStyle;
+  $('#lineHeightRange').oninput = updateDocumentStyle;
   document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); printCv(); } });
 }
 
@@ -109,9 +120,14 @@ function selectedProfile() {
 function documentStyle(profile) {
   const style = profile?.documentStyle || {};
   return {
+    layout: layouts.has(style.layout) ? style.layout : 'classic',
     font: fontStacks[style.font] ? style.font : 'modern',
     textSize: Math.min(120, Math.max(85, Number(style.textSize) || 100)),
-    padding: Math.min(25, Math.max(10, Number(style.padding) || 16))
+    padding: Math.min(25, Math.max(10, Number(style.padding) || 16)),
+    sectionSpacing: Math.min(30, Math.max(6, Number(style.sectionSpacing) || 14)),
+    itemSpacing: Math.min(22, Math.max(3, Number(style.itemSpacing) || 10)),
+    paragraphSpacing: Math.min(14, Math.max(0, Number.isFinite(Number(style.paragraphSpacing)) ? Number(style.paragraphSpacing) : 3)),
+    lineHeight: Math.min(1.7, Math.max(1.2, Number(style.lineHeight) || 1.4))
   };
 }
 
@@ -120,15 +136,24 @@ function loadDocumentControls() {
   if (!profile) return;
   const style = documentStyle(profile);
   $('#cvAccent').value = safeColour(profile.accent);
+  $('#cvLayout').value = style.layout;
   $('#cvFont').value = style.font;
   $('#textSizeRange').value = style.textSize;
   $('#paddingRange').value = style.padding;
+  $('#sectionSpacingRange').value = style.sectionSpacing;
+  $('#itemSpacingRange').value = style.itemSpacing;
+  $('#paragraphSpacingRange').value = style.paragraphSpacing;
+  $('#lineHeightRange').value = style.lineHeight;
   updateStyleLabels(style);
 }
 
 function updateStyleLabels(style) {
   $('#textSizeValue').textContent = `${style.textSize}%`;
   $('#paddingValue').textContent = `${style.padding} mm`;
+  $('#sectionSpacingValue').textContent = `${style.sectionSpacing} px`;
+  $('#itemSpacingValue').textContent = `${style.itemSpacing} px`;
+  $('#paragraphSpacingValue').textContent = `${style.paragraphSpacing} px`;
+  $('#lineHeightValue').textContent = style.lineHeight.toFixed(2);
 }
 
 function updateDocumentStyle() {
@@ -136,9 +161,14 @@ function updateDocumentStyle() {
   if (!profile) return;
   profile.accent = safeColour($('#cvAccent').value);
   profile.documentStyle = {
+    layout: $('#cvLayout').value,
     font: $('#cvFont').value,
     textSize: Number($('#textSizeRange').value),
-    padding: Number($('#paddingRange').value)
+    padding: Number($('#paddingRange').value),
+    sectionSpacing: Number($('#sectionSpacingRange').value),
+    itemSpacing: Number($('#itemSpacingRange').value),
+    paragraphSpacing: Number($('#paragraphSpacingRange').value),
+    lineHeight: Number($('#lineHeightRange').value)
   };
   updateStyleLabels(documentStyle(profile));
   renderProfiles(); renderPreview(); queueSave();
@@ -148,6 +178,7 @@ function applyDocumentStyle(profile) {
   const style = documentStyle(profile);
   const scale = style.textSize / 100;
   const paper = $('#cvPaper');
+  paper.className = `cv-paper layout-${style.layout}`;
   paper.style.setProperty('--accent', safeColour(profile.accent));
   paper.style.setProperty('--cv-font', fontStacks[style.font]);
   paper.style.setProperty('--page-padding', `${style.padding}mm`);
@@ -158,6 +189,10 @@ function applyDocumentStyle(profile) {
   paper.style.setProperty('--cv-body-size', `${9.5 * scale}px`);
   paper.style.setProperty('--cv-profile-size', `${10.5 * scale}px`);
   paper.style.setProperty('--cv-meta-size', `${9 * scale}px`);
+  paper.style.setProperty('--section-gap', `${style.sectionSpacing}px`);
+  paper.style.setProperty('--item-gap', `${style.itemSpacing}px`);
+  paper.style.setProperty('--paragraph-gap', `${style.paragraphSpacing}px`);
+  paper.style.setProperty('--line-height', style.lineHeight);
   $('#printPageStyle').textContent = `@media print { @page { size: A4; margin: ${style.padding}mm; } }`;
 }
 
