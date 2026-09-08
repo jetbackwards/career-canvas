@@ -15,6 +15,7 @@ let editing = null;
 let pendingImport = null;
 let saveTimer;
 let activeTag = 'all';
+const edition = window.CareerCanvasEdition || {};
 
 const tagLabels = { 
 	clinical: 'Clinical', 
@@ -59,6 +60,7 @@ const layouts = new Set(['classic', 'contemporary', 'centred', 'minimal']);
 async function init() {
 	data = await fetch('/api/data').then(r => { if (!r.ok) throw new Error('Could not load data'); return r.json(); });
 	bind(); render();
+	await edition.start?.({ getData: () => data, setData: next => { data = next; render(); queueSave(); }, render, showView, toast });
 }
 
 function bind() {
@@ -107,6 +109,7 @@ function render() {
 	if (data.cvProfiles.some(p => p.id === selected)) $('#previewProfile').value = selected;
 	loadDocumentControls();
 	renderPreview();
+	edition.afterRender?.({ data });
 }
 
 function renderIdentity() {
