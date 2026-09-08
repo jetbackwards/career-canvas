@@ -112,7 +112,7 @@ function render() {
 	if (data.cvProfiles.some(p => p.id === selected)) $('#previewProfile').value = selected;
 	loadDocumentControls();
 	renderPreview();
-	edition.afterRender?.({ data });
+	if (editionReady) edition.afterRender?.({ data });
 }
 
 function renderIdentity() {
