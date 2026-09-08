@@ -13,7 +13,7 @@ import { randomUUID } from 'node:crypto';
 
 const port = Number(process.env.PORT || 3000);
 const dataFile = process.env.DATA_FILE || './data/career-canvas.json';
-const publicRoot = new URL('./public/', import.meta.url).pathname;
+const publicRoot = new URL('./dist/', import.meta.url).pathname;
 const bodyLimit = 2 * 1024 * 1024;
 const editionModuleUrl = new URL(process.env.CAREER_CANVAS_EDITION_MODULE || './src/community-edition.mjs', import.meta.url);
 const storageModuleUrl = new URL(process.env.CAREER_CANVAS_STORAGE_MODULE || './src/json-storage.mjs', import.meta.url);

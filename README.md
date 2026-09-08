@@ -2,7 +2,7 @@
 
 Career Canvas is a private, self-hosted career evidence bank and CV builder. Record an achievement once, tag it by theme, and reuse it across focused medical, leadership, technical or other CV profiles.
 
-It is intentionally small and self-contained: a Node.js server, a browser-based interface, a JSON data file and no external database, analytics service or web font dependency.
+It is intentionally small and self-contained: a Node.js server, a Vue 3 browser interface, a JSON data file and no external database, analytics service or web font dependency.
 
 ## Features
 
