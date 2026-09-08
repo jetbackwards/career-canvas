@@ -7,14 +7,16 @@
  */
 
 import http from 'node:http';
-import { readFile, writeFile, mkdir, rename, stat } from 'node:fs/promises';
-import { dirname, extname, join, normalize } from 'node:path';
+import { readFile, stat } from 'node:fs/promises';
+import { extname, join, normalize } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 const port = Number(process.env.PORT || 3000);
 const dataFile = process.env.DATA_FILE || './data/career-canvas.json';
 const publicRoot = new URL('./public/', import.meta.url).pathname;
 const bodyLimit = 2 * 1024 * 1024;
+const editionModuleUrl = new URL(process.env.CAREER_CANVAS_EDITION_MODULE || './src/community-edition.mjs', import.meta.url);
+const storageModuleUrl = new URL(process.env.CAREER_CANVAS_STORAGE_MODULE || './src/json-storage.mjs', import.meta.url);
 
 const emptyData = () => ({
 	version: 1,
@@ -27,23 +29,10 @@ const emptyData = () => ({
 	]
 });
 
-async function loadData() {
-	try {
-		return JSON.parse(await readFile(dataFile, 'utf8'));
-	} catch (error) {
-		if (error.code !== 'ENOENT') throw error;
-		const data = emptyData();
-		await saveData(data);
-		return data;
-	}
-}
-
-async function saveData(data) {
-	await mkdir(dirname(dataFile), { recursive: true });
-	const temp = `${dataFile}.tmp`;
-	await writeFile(temp, JSON.stringify(data, null, 2), 'utf8');
-	await rename(temp, dataFile);
-}
+const { createEdition } = await import(editionModuleUrl);
+const { createStorage } = await import(storageModuleUrl);
+const edition = await createEdition();
+const storage = await createStorage({ dataFile, emptyData });
 
 function validate(data) {
 	if (!data || typeof data !== 'object' || !data.profile || !Array.isArray(data.entries) || !Array.isArray(data.cvProfiles)) return false;
@@ -83,14 +72,25 @@ async function serveStatic(pathname, res) {
 const server = http.createServer(async (req, res) => {
 	try {
 		const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-		if (url.pathname === '/api/data' && req.method === 'GET') return json(res, 200, await loadData());
+
+		if (url.pathname === '/api/health') return json(res, 200, { ok: true, edition: edition.id });
+		if (url.pathname === '/api/config' && req.method === 'GET') {
+			const config = await edition.publicConfig?.();
+			return json(res, 200, config || { id: edition.id, capabilities: edition.capabilities || [] });
+		}
+
+		let actor = null;
+		if (url.pathname.startsWith('/api/')) actor = await edition.authenticate(req, { url });
+		const context = { url, actor, json: (status, value) => json(res, status, value), readBody: () => readBody(req) };
+		if (await edition.handleRequest(req, context)) return;
+
+		if (url.pathname === '/api/data' && req.method === 'GET') return json(res, 200, await storage.load(actor));
 		if (url.pathname === '/api/data' && req.method === 'PUT') {
 			const body = await readBody(req);
 			if (!validate(body)) return json(res, 400, { error: 'Invalid Career Canvas data' });
-			await saveData({ ...body, version: 1 });
+			await storage.save(actor, { ...body, version: 1 });
 			return json(res, 200, { saved: true, at: new Date().toISOString() });
 		}
-		if (url.pathname === '/api/health') return json(res, 200, { ok: true });
 		if (await serveStatic(url.pathname, res)) return;
 		res.writeHead(404); res.end('Not found');
 	} catch (error) {
@@ -98,4 +98,4 @@ const server = http.createServer(async (req, res) => {
 	}
 });
 
-server.listen(port, '0.0.0.0', () => console.log(`Career Canvas listening on ${port}`));
+server.listen(port, '0.0.0.0', () => console.log(`Career Canvas (${edition.id}) listening on ${port}`));
