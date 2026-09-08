@@ -38,14 +38,14 @@ Core validation still runs before a document is saved.
 
 ## Browser adapter
 
-`public/edition.js` loads before `public/app.js` and assigns `window.CareerCanvasEdition`.
+`public/edition.js` is copied into the Vite build, loads before the Vue entry point and assigns `window.CareerCanvasEdition`.
 
 The core browser application supports two optional hooks:
 
 - `start(context)`, called once after initial rendering;
 - `afterRender(context)`, called after each core render.
 
-The start context exposes `getData`, `setData`, `render`, `showView` and `toast`. Keep premium controls and navigation in the edition adapter rather than patching core rendering functions wherever possible.
+The start context exposes `getData`, `setData`, `render`, `showView` and `toast`. Vue handles core rendering reactively; `render` remains available as a compatibility hook that schedules `afterRender`. Keep premium controls and navigation in the edition adapter rather than patching core components wherever possible. A private edition can replace `public/edition.js` before running `npm run build`.
 
 ## Keeping a private edition aligned
 
