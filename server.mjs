@@ -81,7 +81,7 @@ const server = http.createServer(async (req, res) => {
 
 		let actor = null;
 		if (url.pathname.startsWith('/api/')) actor = await edition.authenticate(req, { url });
-		const context = { url, actor, json: (status, value) => json(res, status, value), readBody: () => readBody(req) };
+		const context = { url, actor, response: res, json: (status, value) => json(res, status, value), readBody: () => readBody(req) };
 		if (await edition.handleRequest(req, context)) return;
 
 		if (url.pathname === '/api/data' && req.method === 'GET') return json(res, 200, await storage.load(actor));
