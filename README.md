@@ -104,6 +104,12 @@ npm start
 
 The server listens on <http://localhost:3000> and stores data in `./data/career-canvas.json` by default. Override these locations with the `PORT` and `DATA_FILE` environment variables.
 
+## Editions and extensions
+
+The Community edition uses replaceable adapters for authentication, storage, API routes and browser enhancements. This keeps the public application self-contained while allowing separately maintained editions to add capabilities without repeatedly changing core files.
+
+See [Edition extension points](docs/EDITION-EXTENSIONS.md) for the adapter contracts, environment variables and recommended private-repository synchronization workflow.
+
 ## Development
 
 There is no build step and there are no runtime package dependencies. The browser application is in `public/`, while `server.mjs` serves the static files and provides the JSON persistence API.
