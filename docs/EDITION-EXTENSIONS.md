@@ -23,7 +23,7 @@ Paths are resolved relative to `server.mjs`. A separately maintained edition can
 - `authenticate(request, context)`: resolves the current actor or throws an error with an HTTP `status`;
 - `handleRequest(request, context)`: handles edition-specific API routes and returns `true`, or returns `false` to continue through the core router.
 
-The request context supplied to edition routes includes `url`, `actor`, `json` and `readBody`.
+The request context supplied to edition routes includes `url`, `actor`, the raw Node `response`, `json` and `readBody`.
 
 ### Storage contract
 
