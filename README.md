@@ -2,7 +2,7 @@
 
 Career Canvas is a private, self-hosted career evidence bank and CV builder. Record an achievement once, tag it by theme, and reuse it across focused medical, leadership, technical or other CV profiles.
 
-It is intentionally small and self-contained: a Node.js server, a browser-based interface, a JSON data file and no external database, analytics service or web font dependency.
+It is intentionally small and self-contained: a Node.js server, a Vue 3 browser interface, a JSON data file and no external database, analytics service or web font dependency.
 
 ## Features
 
@@ -103,6 +103,12 @@ npm start
 ```
 
 The server listens on <http://localhost:3000> and stores data in `./data/career-canvas.json` by default. Override these locations with the `PORT` and `DATA_FILE` environment variables.
+
+## Editions and extensions
+
+The Community edition uses replaceable adapters for authentication, storage, API routes and browser enhancements. This keeps the public application self-contained while allowing separately maintained editions to add capabilities without repeatedly changing core files.
+
+See [Edition extension points](docs/EDITION-EXTENSIONS.md) for the adapter contracts, environment variables and recommended private-repository synchronization workflow.
 
 ## Development
 
