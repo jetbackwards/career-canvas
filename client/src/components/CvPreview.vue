@@ -71,7 +71,7 @@ watch(
 );
 </script>
 <template>
-	<section class="view active preview-workspace">
+	<section id="previewView" class="view active preview-workspace">
 		<aside class="preview-controls">
 			<label
 			>CV profile<select
@@ -79,10 +79,9 @@ watch(
 			@change="emit('select', $event.target.value)"
 			>
 			<option v-for="p in data.cvProfiles" :key="p.id" :value="p.id">
-				{{ p.name }}
-			</option>
-		</select></label
-		>
+				{{Object.keys(data.cvProfiles).findIndex(key => data.cvProfiles[key].id === p.id) + 1}}: {{ p.name }}
+			</option>	
+		</select></label>
 		<label
 		>Target role<input
 		v-model="controls.targetRole"
@@ -201,7 +200,7 @@ class="cv-paper"
 >
 <header class="cv-head">
 	<div>
-		<h1>{{ data.profile.name || "Your name" }}</h1>
+		<h1>{{data.profile.title}} {{ data.profile.name || "Your name" }}</h1>
 		<p class="cv-title">
 			{{
 				controls.targetRole ||
