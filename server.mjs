@@ -98,4 +98,4 @@ const server = http.createServer(async (req, res) => {
 	}
 });
 
-server.listen(port, '0.0.0.0', () => console.log(`Career Canvas (${edition.id}) listening on ${port}`));
+server.listen(port, '0.0.0.0', () => console.log(`Career Canvas (${edition.id}) listening on ${port} - note forwarding through docker may alter apparent port`));

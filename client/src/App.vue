@@ -2,9 +2,44 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import AppHeader from './components/AppHeader.vue'; import EvidenceBank from './components/EvidenceBank.vue'; import ProfilesView from './components/ProfilesView.vue'; import CvPreview from './components/CvPreview.vue'; import EditorDialog from './components/EditorDialog.vue'; import TransferDialogs from './components/TransferDialogs.vue';
 const data=ref(),activeView=ref('evidence'),selectedProfileId=ref(''),saveState=ref('Saved'),editor=ref(),transfer=ref(),toastMessage=ref(''),fatal=ref(false);let saveTimer,toastTimer;const edition=window.CareerCanvasEdition||{};
-function showView(view){activeView.value=view;if(view==='preview'&&!selectedProfileId.value)selectedProfileId.value=data.value?.cvProfiles[0]?.id||'';}
-function toast(message){toastMessage.value=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastMessage.value='',3500);}
-function changed(){clearTimeout(saveTimer);saveState.value='Saving…';saveTimer=setTimeout(async()=>{try{const r=await fetch('/api/data',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(data.value)});if(!r.ok)throw new Error();saveState.value='Saved';}catch{saveState.value='Save failed';toast('Could not save. Download a backup before closing.');}},400);nextTick(()=>edition.afterRender?.({data:data.value}));}
+
+function showView(view) {
+    activeView.value = view;
+    if(view === 'preview' && !selectedProfileId.value) {
+        selectedProfileId.value=data.value?.cvProfiles[0]?.id||'';
+    }
+}
+function toast(message) {
+    toastMessage.value = message;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastMessage.value='',3500);
+}
+
+function changed() {
+    clearTimeout(saveTimer);
+    saveState.value = 'Saving…';
+    saveTimer = setTimeout(async()=>{
+        try{
+            const r = await fetch('/api/data',{
+                method:'PUT',
+                headers: {
+                    'content-type':'application/json'
+                },
+                body:JSON.stringify(data.value)
+            });
+            if(!r.ok) {
+                throw new Error();
+            }
+            saveState.value='Saved';
+        }
+        catch{
+            saveState.value = 'Save failed';
+            toast('Could not save. Download a backup before closing.');
+        }
+    },400);
+    nextTick(()=>edition.afterRender?.({data:data.value}));
+}
+
 function saveEditor({editing,value}){if(editing.kind==='identity')data.value.profile={...data.value.profile,...value};else{const key=editing.kind==='entry'?'entries':'cvProfiles',i=data.value[key].findIndex(x=>x.id===editing.id);if(i<0)data.value[key].push(value);else data.value[key][i]=value;}changed();}
 function deleteEditor(editing){const key=editing.kind==='entry'?'entries':'cvProfiles';data.value[key]=data.value[key].filter(x=>x.id!==editing.id);changed();}
 function replaceData(next){data.value=next;selectedProfileId.value=next.cvProfiles[0]?.id||'';changed();}
